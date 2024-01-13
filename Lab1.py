@@ -64,37 +64,33 @@ class NewsFetcher:
         return news_list
     pass
 
-class NewsUpdater:
+# The main class to fetch the news and start the background threads
+class NewsAggregator:
     def __init__(self):
-        self.news_fetcher = NewsFetcher()
-        self.shown_news = set()
-        self.news_queue = queue.Queue()
+        self.news_queue = Queue()
+        self.urls = ['https://www.foxnews.com/category/politics/elections/presidential-primaries-candidate-tracker', 'https://abcnews.go.com/elections', 'https://russian.rt.com/business']
+        self.news_sites = ['Fox News', 'ABC News', 'RT News']
 
-    def update_news(self):      
+    def start_fetching_news(self):
+        for i in range(len(self.urls)):
+            t = NewsFetcherThread("Thread-{}".format(i + 1), self.news_queue, self.urls[i], self.news_sites[i])
+            t.daemon = True
+            t.start()
+
+    def print_news(self):
         while True:
-            news = [*self.news_fetcher.GetFoxNews(), *self.news_fetcher.GetAbcNews(), *self.news_fetcher.GetRtNews()]            
-            for item in news:
-                if item.title not in self.shown_news:
-                    self.news_queue.put(item)
-                    self.shown_news.add(item.title)                    
-            time.sleep(10) # raising this delay can sometimes increase the amount of articles shown (change if not all news on the website are shown)
-
-class ConsoleApp:
-    def __init__(self, news_updater):
-        self.news_updater = news_updater
-
-    def run(self):
-        updater_thread = threading.Thread(target=self.news_updater.update_news, daemon=True)
-        updater_thread.start()
-
-        try:
-            while True:
-                if not self.news_updater.news_queue.empty():
-                    new_item = self.news_updater.news_queue.get()
-                    print(new_item, '\n')
-                time.sleep(1)
-        except (KeyboardInterrupt, SystemExit):
-            print("Exiting the application.\n")
+          try:
+            news_item = self.news_queue.get()
+            if news_item is not None:
+             time.sleep(0.5)
+             print("Source: ", news_item[3])
+             print("Title: ", news_item[0])
+             print("Description: ", news_item[1])
+             print("Time: ", news_item[2])
+             print("--------------------------------------------------------------------------------------------------")
+          except (KeyboardInterrupt, SystemExit):
+            print("\n Exiting the application... \n")
+            sys.exit()
 
 if __name__ == '__main__':
     updater = NewsUpdater()
