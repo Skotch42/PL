@@ -27,6 +27,9 @@ class NewsFetcherThread(threading.Thread):
                  abstract = news.find('p', class_='dek').text
                  Time = news.find('span', class_='time').text
                  news_item = (title, abstract, Time, link)
+                 if title not in self.queue.seen_titles:
+                    self.queue.put(news_item)
+                    self.queue.seen_titles.add(title)
                     
               time.sleep(30)
              
@@ -40,6 +43,9 @@ class NewsFetcherThread(threading.Thread):
                 Time = news.find('div', class_='ContentRoll__TimeStamp').find('div', class_='TimeStamp__Date').text
                 abstract = news.find('div', class_='ContentRoll__Desc').text
                 news_item = (title, abstract, Time, link)
+                if title not in self.queue.seen_titles:
+                    self.queue.put(news_item)
+                    self.queue.seen_titles.add(title)
                     
               time.sleep(30)
                 
@@ -53,8 +59,25 @@ class NewsFetcherThread(threading.Thread):
                 Time = news.find('div', class_='card__date_sections').find('time').text.strip()
                 abstract = news.find('div', class_='card__summary_sections').text.strip()
                 news_item = (title, abstract, Time, link)
+                if title not in self.queue.seen_titles:
+                    self.queue.put(news_item)
+                    self.queue.seen_titles.add(title)
                     
               time.sleep(30)
+
+class Queue:
+    def __init__(self):
+        self.queue = []
+        self.seen_titles = set()
+
+    def put(self, item):
+        self.queue.append(item)
+
+    def get(self):
+        if self.queue:
+            return self.queue.pop(0)
+        else:
+            return None
 
 # The main class to fetch the news and start the background threads
 class NewsAggregator:
