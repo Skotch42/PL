@@ -5,64 +5,56 @@ import sys
 import threading
 from queue import Queue
 
-class NewsFetcher: 
+# A worker thread to fetch and parse the news from the provided URLs
+class NewsFetcherThread(threading.Thread):
     def __init__(self, name, queue, url, news_site_name):
         threading.Thread.__init__(self)
         self.name = name
         self.queue = queue
         self.url = url
         self.news_site_name = news_site_name
-    
-    def GetFoxNews(self):
-        url = 'https://www.foxnews.com/category/politics/elections/presidential-primaries-candidate-tracker'
-        html = requests.get(url).text
-        soup = bs4.BeautifulSoup(html, features='html.parser')
-        news_divs = soup.find_all('article', class_='article')
-        news_list = []
 
-        for div in news_divs:
-            title = div.find('h4', class_='title').text
-            summary = div.find('p', class_='dek').text
-            date = div.find('span', class_='time').text
-            link = 'foxnews.com'
-            news_list.append( NewsInfo( title, date, summary, link ))
-        
-        return news_list
-    pass
+    def run(self):
+        while True:
+            response = requests.get(self.url)
+            if self.url == 'https://www.foxnews.com/category/politics/elections/presidential-primaries-candidate-tracker':
+              soup = BeautifulSoup(response.text, 'html.parser')
+              news_list = soup.find_all('article', {'class': 'article'})
 
-    def GetAbcNews(self):
-        url = 'https://abcnews.go.com/elections'
-        html = requests.get(url).text
-        soup = bs4.BeautifulSoup(html, features='html.parser')
-        news_sections = soup.find_all('section', class_='ContentRoll__Item')
-        news_list = []
+              for news in news_list:
+                 link = self.news_site_name
+                 title = news.find('h4', class_='title').text
+                 abstract = news.find('p', class_='dek').text
+                 Time = news.find('span', class_='time').text
+                 news_item = (title, abstract, Time, link)
+                    
+              time.sleep(30)
+             
+            if self.url == 'https://abcnews.go.com/elections':
+              soup = BeautifulSoup(response.text, 'html.parser')
+              news_list = soup.find_all('section', {'class': 'ContentRoll__Item'})
 
-        for section in news_sections:
-            title = section.find('h2').text
-            date = section.find('div', class_='ContentRoll__TimeStamp').find('div', class_='TimeStamp__Date').text
-            summary = section.find('div', class_='ContentRoll__Desc').text
-            link='abcnews.go.com'        
-            news_list.append( NewsInfo( title, date, summary, link ))
-        
-        return news_list
-    pass
+              for news in news_list:
+                link = self.news_site_name
+                title = news.find('h2').text
+                Time = news.find('div', class_='ContentRoll__TimeStamp').find('div', class_='TimeStamp__Date').text
+                abstract = news.find('div', class_='ContentRoll__Desc').text
+                news_item = (title, abstract, Time, link)
+                    
+              time.sleep(30)
+                
+            if self.url == 'https://russian.rt.com/business':
+              soup = BeautifulSoup(response.text, 'html.parser')
+              news_list = soup.find_all('li', {'class': 'listing__column_sections'})
 
-    def GetRtNews(self):
-        url = 'https://russian.rt.com/business'
-        html = requests.get(url).text
-        soup = bs4.BeautifulSoup(html, features='html.parser')
-        news_items = soup.find_all('li', class_='listing__column_sections')
-        news_list = []
-
-        for item in news_items:
-            title = item.find('div', class_='card__heading_sections').find('a').text.strip()
-            date = item.find('div', class_='card__date_sections').find('time').text.strip()
-            summary = item.find('div', class_='card__summary_sections').text.strip()
-            link='russian.rt.com'        
-            news_list.append( NewsInfo( title, date, summary, link ))
-
-        return news_list
-    pass
+              for news in news_list:
+                link = self.news_site_name
+                title = news.find('div', class_='card__heading_sections').find('a').text.strip()
+                Time = news.find('div', class_='card__date_sections').find('time').text.strip()
+                abstract = news.find('div', class_='card__summary_sections').text.strip()
+                news_item = (title, abstract, Time, link)
+                    
+              time.sleep(30)
 
 # The main class to fetch the news and start the background threads
 class NewsAggregator:
@@ -92,7 +84,7 @@ class NewsAggregator:
             print("\n Exiting the application... \n")
             sys.exit()
 
-if __name__ == '__main__':
-    updater = NewsUpdater()
-    app = ConsoleApp(updater)
-    app.run()
+if __name__ == "__main__":
+    news_aggregator = NewsAggregator()
+    news_aggregator.start_fetching_news()
+    news_aggregator.print_news()
