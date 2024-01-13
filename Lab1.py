@@ -1,20 +1,18 @@
 import requests
-import bs4
+from bs4 import BeautifulSoup
 import time
-import queue
+import sys
 import threading
-
-class NewsInfo:
-    def __init__(self, t, d, s, l):
-        self.title = t
-        self.date = d
-        self.summary = s
-        self.link = l
-
-    def __str__(self):
-        return f"Title: {self.title}\nDate: {self.date}\nLink: {self.link}\nSummary: {self.summary}\n=======================================================================================================================\n"
+from queue import Queue
 
 class NewsFetcher: 
+    def __init__(self, name, queue, url, news_site_name):
+        threading.Thread.__init__(self)
+        self.name = name
+        self.queue = queue
+        self.url = url
+        self.news_site_name = news_site_name
+    
     def GetFoxNews(self):
         url = 'https://www.foxnews.com/category/politics/elections/presidential-primaries-candidate-tracker'
         html = requests.get(url).text
