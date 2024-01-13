@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Generator</title>
+</head>
+<body>
+    <form id="passwordForm">
+        <label for="length">Length:</label>
+        <input type="number" id="length" name="length" min="1" required>
+        <br>
+        <label for="sets">Character Sets:</label>
+        <br>
+        <input type="checkbox" id="lowercase" name="lowercase">
+        <label for="lowercase">Lowercase</label>
+        <br>
+        <input type="checkbox" id="uppercase" name="uppercase">
+        <label for="uppercase">Uppercase</label>
+        <br>
+        <input type="checkbox" id="numbers" name="numbers">
+        <label for="numbers">Numbers</label>
+        <br>
+        <input type="checkbox" id="symbols" name="symbols">
+        <label for="symbols">Symbols</label>
+        <br>
+        <label for="count">Number of Passwords:</label>
+        <input type="number" id="count" name="count" min="1" required>
+        <br>
+        <button type="submit">Generate Passwords</button>
+    </form>
+    <h2>Generated Passwords:</h2>
+    <ul id="passwordList"></ul>
+    <script>
+        document.getElementById('passwordForm').addEventListener('submit', function (event)
+        {
+            event.preventDefault();
+
+            var length = document.getElementById('length').value;
+            var sets =
+            {
+                lowercase: document.getElementById('lowercase').checked,
+                uppercase: document.getElementById('uppercase').checked,
+                numbers: document.getElementById('numbers').checked,
+                symbols: document.getElementById('symbols').checked
+            };
+            var count = document.getElementById('count').value;
+
+            var passwords = generatePasswords(length, sets, count);
+            savePasswordsToFile(passwords);
+
+            displayPasswords(passwords);
+        });
+
+        function generatePasswords(length, sets, count)
+        {
+            var passwords = [];
+            var characters = '';
+
+            if (sets.lowercase)
+            {
+                characters += 'abcdefghijklmnopqrstuvwxyz';
+            }
+            if (sets.uppercase)
+            {
+                characters += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            }
+            if (sets.numbers)
+            {
+                characters += '0123456789';
+            }
+            if (sets.symbols)
+            {
+                characters += '!@#$%^&*()_+=-[]{};:\'"<>,.?/';
+            }
+
+            for (var i = 0; i < count; i++)
+            {
+                var password = '';
+
+                for (var j = 0; j < length; j++)
+                {
+                    var randomIndex = Math.floor(Math.random() * characters.length);
+                    password += characters[randomIndex];
+                }
+
+                passwords.push(password);
+            }
+
+            return passwords;
+        }
+
+        function savePasswordsToFile(passwords) //after all passwords are generated this function automatically saves them in "passwords.txt" file
+        {
+            var blob = new Blob(passwords.map(function (password)
+            {
+                return password + '\n';
+            }), { type: 'text/plain;charset=utf-8' });
+
+            var url = URL.createObjectURL(blob);
+            var link = document.createElement('a');
+            link.href = url;
+            link.download = 'passwords.txt';
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function displayPasswords(passwords)
+        {
+            var passwordList = document.getElementById('passwordList');
+            passwordList.innerHTML = '';
+
+            passwords.forEach(function (password)
+            {
+                var listItem = document.createElement('button');
+                listItem.textContent = password;
+                listItem.style.display = 'block';
+
+                listItem.addEventListener('click', function ()
+                {
+                    copyToClipboard(password);
+                });
+
+                passwordList.appendChild(listItem);
+            });
+        }
+
+        function copyToClipboard(text)
+        {
+            var textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+        }
+    </script>
+</body>
+</html>
